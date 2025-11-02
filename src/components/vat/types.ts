@@ -38,7 +38,7 @@ export interface VATMaterialControls {
 
 // Common VAT props shared across components
 export interface CommonVATProps {
-  gltf: THREE.Group
+  scene: THREE.Group
   posTex: THREE.Texture
   nrmTex?: THREE.Texture | null
   metaData: VATMeta

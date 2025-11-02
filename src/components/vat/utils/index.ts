@@ -56,7 +56,10 @@ export function setupVATMaterials(
     materials.push(vatDepthMaterial)
   }
 
+  // Configure mesh properties
   mesh.frustumCulled = false
+  mesh.castShadow = true
+  mesh.receiveShadow = true
 
   return materials
 }
@@ -65,7 +68,7 @@ export function setupVATMaterials(
  * Clone and setup VAT scene with materials
  */
 export function cloneAndSetupVATScene(
-  gltf: THREE.Group,
+  basisScene: THREE.Group,
   posTex: THREE.Texture,
   nrmTex: THREE.Texture | null,
   envMap: THREE.Texture | null,
@@ -73,15 +76,15 @@ export function cloneAndSetupVATScene(
   materialControls: any,
   useDepthMaterial: boolean
 ): {
-  scene: THREE.Group
+  vatScene: THREE.Group
   materials: CustomShaderMaterial[]
   mesh: THREE.Mesh | null
 } {
-  const clonedScene = gltf.clone()
+  const vatScene = basisScene.clone()
   const materials: CustomShaderMaterial[] = []
   let vatMesh: THREE.Mesh | null = null
 
-  clonedScene.traverse((object: any) => {
+  vatScene.traverse((object: any) => {
     if (object.isMesh) {
       const mesh = object as THREE.Mesh
       const meshMaterials = setupVATMaterials(
@@ -92,7 +95,7 @@ export function cloneAndSetupVATScene(
     }
   })
   
-  return { scene: clonedScene, materials, mesh: vatMesh }
+  return { vatScene, materials, mesh: vatMesh }
 }
 
 /**

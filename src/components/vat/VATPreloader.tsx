@@ -27,7 +27,7 @@ function configureEXRLoader(loader: any) {
 
 // Hook to preload VAT resources
 export function useVATPreloader(gltfPath: string, pos: string, nrm?: string | null, metaUrl?: string) {
-  const gltf = useGLTF(gltfPath)
+  const { scene } = useGLTF(gltfPath)
   const posTex = useLoader(getLoaderForExtension(pos), pos, configureEXRLoader)
   const nrmTex = useLoader(getLoaderForExtension(nrm || pos), nrm || pos, configureEXRLoader)
 
@@ -35,10 +35,10 @@ export function useVATPreloader(gltfPath: string, pos: string, nrm?: string | nu
   const meta = metaResponse ? JSON.parse(metaResponse as string) : null
 
   return {
-    gltf,
+    scene,
     posTex,
     nrmTex: nrm ? nrmTex : null,
     meta: metaUrl ? meta : null,
-    isLoaded: !!(gltf && posTex && (!nrm || nrmTex) && (!metaUrl || meta))
+    isLoaded: !!(scene && posTex && (!nrm || nrmTex) && (!metaUrl || meta))
   }
 }

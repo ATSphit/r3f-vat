@@ -4,11 +4,10 @@ import { useFrame, useThree } from '@react-three/fiber'
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 import { useControls } from 'leva'
 import { VATMeshProps } from './types'
-import { updatePhysicalProperties, updateAdvancedProperties } from './materials'
 import { cloneAndSetupVATScene, calculateVATFrame } from './utils'
 
 export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
-  gltf,
+  scene,
   posTex,
   nrmTex = null,
   metaData,
@@ -19,7 +18,7 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
   id,
   ...rest
 }: VATMeshProps, ref) {
-  const materialPropertiesControls = useControls('VAT.Material', {
+  const materialControls = useControls('VAT.Material', {
     roughness: { value: 0.4, min: 0, max: 1, step: 0.01 },
     metalness: { value: 0.6, min: 0, max: 1, step: 0.01 },
     transmission: { value: 0, min: 0, max: 1, step: 0.01 },
@@ -41,44 +40,65 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
     attenuationColor: '#ffffff',
   }, { collapsed: true })
 
-  const materialControls = { ...materialPropertiesControls }
-
   const groupRef = useRef<THREE.Group>(null!)
   const materialsRef = useRef<CustomShaderMaterial[]>([])
-  const clonedSceneRef = useRef<THREE.Group | null>(null)
-  const { scene } = useThree()
+  const vatSceneRef = useRef<THREE.Group | null>(null)
+  const { scene: r3fScene } = useThree()
 
   // Create materials and clone scene
   useEffect(() => {
     // Remove old scene if exists
-    if (clonedSceneRef.current && groupRef.current) {
-      groupRef.current.remove(clonedSceneRef.current)
+    if (vatSceneRef.current && groupRef.current) {
+      groupRef.current.remove(vatSceneRef.current)
     }
 
-    const { scene: clonedScene, materials } = cloneAndSetupVATScene(
-      gltf, posTex, nrmTex, scene.environment, metaData, materialControls, useDepthMaterial
+    const { vatScene, materials } = cloneAndSetupVATScene(
+      scene, posTex, nrmTex, r3fScene.environment, metaData, materialControls, useDepthMaterial
     )
 
     materialsRef.current = materials
-    clonedSceneRef.current = clonedScene
+    vatSceneRef.current = vatScene
 
     if (groupRef.current) {
-      groupRef.current.add(clonedScene)
+      groupRef.current.add(vatScene)
     }
 
     return () => {
-      if (clonedSceneRef.current && groupRef.current) {
-        groupRef.current.remove(clonedSceneRef.current)
+      if (vatSceneRef.current && groupRef.current) {
+        groupRef.current.remove(vatSceneRef.current)
       }
     }
-  }, [gltf, posTex, nrmTex, metaData, useDepthMaterial])
+  }, [scene, posTex, nrmTex, metaData, useDepthMaterial])
 
+  // Update materials when controls change (without recreating scene)
   useEffect(() => {
     for (const material of materialsRef.current) {
-      updatePhysicalProperties(material, materialPropertiesControls)
-      updateAdvancedProperties(material, materialPropertiesControls)
+      if (material.uniforms) {
+        // Update material properties
+        Object.assign(material, {
+          roughness: materialControls.roughness,
+          metalness: materialControls.metalness,
+          transmission: materialControls.transmission,
+          thickness: materialControls.thickness,
+          ior: materialControls.ior,
+          clearcoat: materialControls.clearcoat,
+          clearcoatRoughness: materialControls.clearcoatRoughness,
+          reflectivity: materialControls.reflectivity,
+          envMapIntensity: materialControls.envMapIntensity,
+          bumpScale: materialControls.bumpScale,
+          sheen: materialControls.sheen,
+          sheenRoughness: materialControls.sheenRoughness,
+          sheenColor: new THREE.Color(materialControls.sheenColor),
+          iridescence: materialControls.iridescence,
+          iridescenceIOR: materialControls.iridescenceIOR,
+          iridescenceThicknessRange: [materialControls.iridescenceThicknessMin, materialControls.iridescenceThicknessMax],
+          attenuationDistance: materialControls.attenuationDistance,
+          attenuationColor: new THREE.Color(materialControls.attenuationColor),
+        })
+        material.needsUpdate = true
+      }
     }
-  }, [materialPropertiesControls])
+  }, [materialControls])
 
   useFrame((state) => {
     if (paused) return

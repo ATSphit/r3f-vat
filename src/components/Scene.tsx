@@ -6,7 +6,7 @@ import EnvironmentSetup from "./EnvironmentSetup";
 import Lights from "./Lights";
 
 export default function Scene() {
-    const { gltf, posTex, nrmTex, meta, isLoaded } = useVATPreloader(
+    const { scene, posTex, nrmTex, meta, isLoaded } = useVATPreloader(
         '/vat/Rose_fixed_basisMesh.gltf',
         '/vat/Rose_fixed_pos.exr',
         '/vat/Rose_fixed_nrm.png',
@@ -23,16 +23,19 @@ export default function Scene() {
                 <meshStandardMaterial color="white" />
             </mesh>
 
-            <mesh castShadow position={[1, 1, 0]}>
+            {/* <mesh castShadow position={[1, 1, 0.5]}>
                 <boxGeometry args={[1, 1, 1]} />
                 <meshStandardMaterial color="red" />
-            </mesh>
+            </mesh> */}
 
             <CameraControls makeDefault />
+
             <CanvasCapture />
+
+
             {isLoaded && (
                 <VATMesh
-                    gltf={gltf.scene}
+                    scene={scene}
                     posTex={posTex}
                     nrmTex={nrmTex}
                     metaData={meta}

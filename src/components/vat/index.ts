@@ -22,7 +22,5 @@ export {
 // Material exports
 export {
   createVATMaterial,
-  createVATDepthMaterial,
-  updatePhysicalProperties,
-  updateAdvancedProperties
+  createVATDepthMaterial
 } from './materials'
