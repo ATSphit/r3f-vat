@@ -1,11 +1,11 @@
 import * as THREE from 'three'
-import { useEffect, useRef, useState, forwardRef } from 'react'
+import { useEffect, useRef, forwardRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 import { useControls } from 'leva'
 import { VATMeshProps } from './types'
 import { updatePhysicalProperties, updateAdvancedProperties } from './materials'
-import { cloneAndSetupVATScene, calculateVATFrame } from './utils/materialSetup'
+import { cloneAndSetupVATScene, calculateVATFrame } from './utils'
 
 export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
   gltf,
@@ -41,19 +41,12 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
     attenuationColor: '#ffffff',
   }, { collapsed: true })
 
-  const shaderControls = useControls('VAT.Shader', {
-    noiseScale: { value: 1, min: 0, max: 10, step: 0.1 },
-    noiseStrength: { value: 0.3, min: 0, max: 1, step: 0.01 },
-    waveSpeed: { value: 0.3, min: 0, max: 1, step: 0.01 },
-  }, { collapsed: true })
-
-  const materialControls = { ...materialPropertiesControls, ...shaderControls }
+  const materialControls = { ...materialPropertiesControls }
 
   const groupRef = useRef<THREE.Group>(null!)
   const materialsRef = useRef<CustomShaderMaterial[]>([])
   const clonedSceneRef = useRef<THREE.Group | null>(null)
   const { scene } = useThree()
-  const seed = useRef(THREE.MathUtils.randFloat(0, 1000))
 
   // Create materials and clone scene
   useEffect(() => {
@@ -87,14 +80,13 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
     }
   }, [materialPropertiesControls])
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (paused) return
 
     const frame = calculateVATFrame(frameRatio, state.clock.elapsedTime, metaData, vatSpeed)
 
     for (const material of materialsRef.current) {
       material.uniforms.uFrame.value = frame
-      material.uniforms.uSeed.value = seed.current
     }
   })
 

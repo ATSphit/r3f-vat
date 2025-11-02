@@ -1,7 +1,8 @@
 import * as THREE from 'three'
-import { VATMeta, SpawnedMeshData } from '../types'
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
+import { VATMeta } from '../types'
+import { createVATMaterial, createVATDepthMaterial } from '../materials'
 
-// ========== VAT Geometry Utils ==========
 
 /**
  * Ensure UV2 attribute exists for VAT geometry
@@ -27,128 +28,84 @@ export function ensureUV2ForVAT(geometry: THREE.BufferGeometry, meta: VATMeta): 
   geometry.setAttribute('uv2', new THREE.BufferAttribute(uv2Array, 2))
 }
 
-// ========== Position Utils ==========
+// ========== VAT Material Setup Utils ==========
 
 /**
- * Generate random position inside sphere
+ * Setup materials for a VAT mesh
  */
-export function generateSpherePosition(radius: number = 0.5): [number, number, number] {
-  const theta = Math.random() * Math.PI * 2
-  const phi = Math.acos(2 * Math.random() - 1)
-  const r = Math.cbrt(Math.random()) * radius
-  
-  return [
-    r * Math.sin(phi) * Math.cos(theta),
-    r * Math.sin(phi) * Math.sin(theta),
-    r * Math.cos(phi)
-  ]
+export function setupVATMaterials(
+  mesh: THREE.Mesh,
+  posTex: THREE.Texture,
+  nrmTex: THREE.Texture | null,
+  envMap: THREE.Texture | null,
+  metaData: VATMeta,
+  materialControls: any,
+  useDepthMaterial: boolean
+): CustomShaderMaterial[] {
+  const materials: CustomShaderMaterial[] = []
+
+  ensureUV2ForVAT(mesh.geometry, metaData)
+
+  const vatMaterial = createVATMaterial(posTex, nrmTex, envMap, metaData, materialControls)
+  mesh.material = vatMaterial
+  materials.push(vatMaterial)
+
+  if (useDepthMaterial) {
+    const vatDepthMaterial = createVATDepthMaterial(posTex, nrmTex, metaData)
+    mesh.customDepthMaterial = vatDepthMaterial
+    materials.push(vatDepthMaterial)
+  }
+
+  mesh.frustumCulled = false
+
+  return materials
 }
 
 /**
- * Check if a position is valid (not too close to existing meshes)
+ * Clone and setup VAT scene with materials
  */
-export function isPositionValid(
-  position: THREE.Vector3,
-  existingMeshes: SpawnedMeshData[],
-  minDistance: number = 0.1
-): boolean {
-  return !existingMeshes.some(mesh => {
-    const meshPos = new THREE.Vector3(mesh.position[0], mesh.position[1], mesh.position[2])
-    return position.distanceTo(meshPos) < minDistance
-  })
-}
+export function cloneAndSetupVATScene(
+  gltf: THREE.Group,
+  posTex: THREE.Texture,
+  nrmTex: THREE.Texture | null,
+  envMap: THREE.Texture | null,
+  metaData: VATMeta,
+  materialControls: any,
+  useDepthMaterial: boolean
+): {
+  scene: THREE.Group
+  materials: CustomShaderMaterial[]
+  mesh: THREE.Mesh | null
+} {
+  const clonedScene = gltf.clone()
+  const materials: CustomShaderMaterial[] = []
+  let vatMesh: THREE.Mesh | null = null
 
-/**
- * Generate a valid spawn position that doesn't collide with existing meshes
- */
-export function generateValidPosition(
-  existingMeshes: SpawnedMeshData[],
-  radius: number = 0.5,
-  minDistance: number = 0.1,
-  maxAttempts: number = 50
-): THREE.Vector3 | null {
-  for (let i = 0; i < maxAttempts; i++) {
-    const position = generateSpherePosition(radius)
-    const vectorPosition = new THREE.Vector3(position[0], position[1], position[2])
-    
-    if (isPositionValid(vectorPosition, existingMeshes, minDistance)) {
-      return vectorPosition
+  clonedScene.traverse((object: any) => {
+    if (object.isMesh) {
+      const mesh = object as THREE.Mesh
+      const meshMaterials = setupVATMaterials(
+        mesh, posTex, nrmTex, envMap, metaData, materialControls, useDepthMaterial
+      )
+      materials.push(...meshMaterials)
+      vatMesh = mesh
     }
+  })
+  
+  return { scene: clonedScene, materials, mesh: vatMesh }
+}
+
+/**
+ * Calculate VAT frame based on animation mode
+ */
+export function calculateVATFrame(
+  frameRatio: number | undefined,
+  currentTime: number,
+  metaData: VATMeta,
+  speed: number
+): number {
+  if (frameRatio !== undefined) {
+    return Math.min(frameRatio * metaData.frameCount, metaData.frameCount - 5)
   }
-  return null
+  return currentTime * (metaData.fps * speed) % metaData.frameCount
 }
-
-// ========== Rotation Utils ==========
-
-/**
- * Calculate camera-facing rotation
- */
-export function calculateCameraFacingRotation(
-  meshPosition: THREE.Vector3,
-  cameraPosition: THREE.Vector3,
-  offsetAngle: number = 0
-): THREE.Quaternion {
-  const direction = cameraPosition.clone().sub(meshPosition).normalize()
-  
-  if (offsetAngle !== 0) {
-    const rotationMatrix = new THREE.Matrix4().makeRotationY(offsetAngle)
-    direction.applyMatrix4(rotationMatrix)
-  }
-  
-  const up = new THREE.Vector3(0, 1, 0)
-  const quaternion = new THREE.Quaternion()
-  quaternion.setFromUnitVectors(up, direction)
-  
-  return quaternion
-}
-
-/**
- * Apply random rotation offsets
- */
-export function applyRandomRotationOffsets(
-  baseQuaternion: THREE.Quaternion,
-  xRotationRange: [number, number] = [-45, 45],
-  zRotationRange: [number, number] = [-45, 45]
-): THREE.Quaternion {
-  const randomX = Math.random() * (xRotationRange[1] - xRotationRange[0]) + xRotationRange[0]
-  const randomZ = Math.random() * (zRotationRange[1] - zRotationRange[0]) + zRotationRange[0]
-  
-  const xRotationQuaternion = new THREE.Quaternion().setFromAxisAngle(
-    new THREE.Vector3(1, 0, 0), 
-    THREE.MathUtils.degToRad(randomX)
-  )
-  const zRotationQuaternion = new THREE.Quaternion().setFromAxisAngle(
-    new THREE.Vector3(0, 0, 1), 
-    THREE.MathUtils.degToRad(randomZ)
-  )
-  
-  const result = baseQuaternion.clone()
-  result.multiply(xRotationQuaternion)
-  result.multiply(zRotationQuaternion)
-  
-  return result
-}
-
-// ========== Spawner Utils ==========
-
-/**
- * Create unique ID for spawned mesh
- */
-export function createSpawnId(counter: number): number {
-  return Date.now() + counter + Math.random() * 1000000
-}
-
-
-export function screenToWorldAtDepth(
-  pointer: { x: number; y: number },
-  camera: THREE.Camera,
-  depth: number = 5
-): THREE.Vector3 {
-  const vector = new THREE.Vector3(pointer.x, pointer.y, 0.5);
-  vector.unproject(camera);
-
-  const dir = vector.sub(camera.position).normalize();
-
-  return camera.position.clone().add(dir.multiplyScalar(depth));
-}
-

@@ -13,15 +13,6 @@ export interface VATMeta {
   normalsCompressed: boolean
 }
 
-// VAT resource bundle
-export interface VATResources {
-  gltf: THREE.Group
-  posTex: THREE.Texture
-  nrmTex: THREE.Texture | null
-  meta: VATMeta
-  refCount: number
-}
-
 // Material controls interface
 export interface VATMaterialControls {
   roughness: number
@@ -43,9 +34,6 @@ export interface VATMaterialControls {
   attenuationDistance: number
   attenuationColor: string
   bumpScale: number
-  noiseScale: number
-  noiseStrength: number
-  speed: number
 }
 
 // Common VAT props shared across components
@@ -60,40 +48,10 @@ export interface CommonVATProps {
 
 // VATMesh props interface
 export interface VATMeshProps extends CommonVATProps {
-  manual?: boolean
   vatSpeed?: number
   paused?: boolean
   useDepthMaterial?: boolean
   rotation?: [number, number, number]
   scale?: number | [number, number, number]
   frameRatio?: number
-}
-
-// Lifecycle animation timing
-export interface LifecycleTimingProps {
-  maxScale?: number
-  frameForwardDuration?: number
-  frameHoldDuration?: number
-  frameBackwardDuration?: number
-  scaleInDuration?: number
-  scaleOutDuration?: number
-  rotateInDuration?: number
-  rotateOutDuration?: number
-}
-
-// VATMeshLifecycle props interface
-export interface VATMeshLifecycleProps extends CommonVATProps, LifecycleTimingProps {
-  paused?: boolean
-  manual?: boolean
-  onComplete?: () => void
-}
-
-// Spawned mesh data
-export interface SpawnedMeshData {
-  id: number
-  position: [number, number, number]
-  scale: number
-  holdDuration: number
-  animDuration: number
-  manual: boolean
 }

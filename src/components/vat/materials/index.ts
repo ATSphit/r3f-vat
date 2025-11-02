@@ -9,8 +9,7 @@ export function createVATMaterial(
   nrmTex: THREE.Texture | null,
   envMap: THREE.Texture | null,
   meta: VATMeta,
-  materialProps: VATMaterialControls,
-  manual?: boolean
+  materialProps: VATMaterialControls
 ): CustomShaderMaterial {
   const uniforms = {
     uPosTex: { value: posTex },
@@ -20,12 +19,6 @@ export function createVATMaterial(
     uTexW: { value: meta.texWidth },
     uStoreDelta: { value: meta.storeDelta ? 1 : 0 },
     uNormalsCompressed: { value: meta.normalsCompressed ? 1 : 0 },
-    uTime: { value: 0.0 },
-    uSeed: { value: 0.0 },
-    uManual: { value: manual ? 1 : 0 },
-    uNoiseScale: { value: materialProps.noiseScale },
-    uNoiseStrength: { value: materialProps.noiseStrength },
-    uSpeed: { value: materialProps.speed },
   }
 
   // Only pass valid Three.js material properties
@@ -66,22 +59,16 @@ export function createVATMaterial(
 export function createVATDepthMaterial(
   posTex: THREE.Texture,
   nrmTex: THREE.Texture | null,
-  meta: VATMeta,
-  manual?: boolean
+  meta: VATMeta
 ): CustomShaderMaterial {
   const uniforms = {
     uPosTex: { value: posTex },
     uNrmTex: { value: nrmTex },
     uFrame: { value: 0.0 },
-    uTime: { value: 0.0 },
     uFrames: { value: meta.frameCount },
     uTexW: { value: meta.texWidth },
     uStoreDelta: { value: meta.storeDelta ? 1 : 0 },
     uNormalsCompressed: { value: meta.normalsCompressed ? 1 : 0 },
-    uNoiseScale: { value: 0.1 },
-    uNoiseStrength: { value: 0.1 },
-    uSeed: { value: 0.0 },
-    uManual: { value: manual ? 1 : 0 },
   }
 
   return new CustomShaderMaterial({
@@ -93,16 +80,6 @@ export function createVATDepthMaterial(
   })
 }
 
-// Update shader uniforms
-export function updateShaderUniforms(
-  material: CustomShaderMaterial,
-  shaderControls: Pick<VATMaterialControls, 'noiseScale' | 'noiseStrength'>
-): void {
-  material.uniforms.uHueShift.value = 0.0
-  material.uniforms.uNoiseScale.value = shaderControls.noiseScale
-  material.uniforms.uNoiseStrength.value = shaderControls.noiseStrength
-}
-
 // Update physical material properties
 export function updatePhysicalProperties(
   material: CustomShaderMaterial,
@@ -111,7 +88,6 @@ export function updatePhysicalProperties(
     'clearcoat' | 'clearcoatRoughness' | 'reflectivity' | 'envMapIntensity' | 'bumpScale'
   >
 ): void {
-  // Only update physical material properties, skip depth materials
   if (material.uniforms?.uNrmTex) {
     Object.assign(material, {
       roughness: physicalControls.roughness,
@@ -137,7 +113,6 @@ export function updateAdvancedProperties(
     'iridescenceThicknessMin' | 'iridescenceThicknessMax' | 'attenuationDistance' | 'attenuationColor'
   >
 ): void {
-  // Only update physical material properties, skip depth materials
   if (material.uniforms?.uNrmTex) {
     Object.assign(material, {
       sheen: advancedControls.sheen,
@@ -154,14 +129,4 @@ export function updateAdvancedProperties(
     })
     material.needsUpdate = true
   }
-}
-
-// Update material properties (legacy function for backward compatibility)
-export function updateVATMaterial(
-  material: CustomShaderMaterial,
-  materialControls: VATMaterialControls
-): void {
-  updateShaderUniforms(material, materialControls)
-  updatePhysicalProperties(material, materialControls)
-  updateAdvancedProperties(material, materialControls)
 }
