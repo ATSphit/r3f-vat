@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
-import { VATMeta, VATMaterialControls } from '../types'
+import { VATMeta, VATMaterialControls, VATShaderOverrides } from '../types'
 import { VAT_VERTEX_SHADER, VAT_FRAGMENT_SHADER } from '../shaders'
 
 // Create VAT material with custom shaders
@@ -9,7 +9,8 @@ export function createVATMaterial(
   nrmTex: THREE.Texture | null,
   envMap: THREE.Texture | null,
   meta: VATMeta,
-  materialProps: VATMaterialControls
+  materialProps: VATMaterialControls,
+  shaderOverrides?: VATShaderOverrides
 ): CustomShaderMaterial {
   const uniforms = {
     uPosTex: { value: posTex },
@@ -19,6 +20,7 @@ export function createVATMaterial(
     uTexW: { value: meta.texWidth },
     uStoreDelta: { value: meta.storeDelta ? 1 : 0 },
     uNormalsCompressed: { value: meta.normalsCompressed ? 1 : 0 },
+    ...(shaderOverrides?.customUniforms || {})
   }
 
   // Only pass valid Three.js material properties
@@ -45,8 +47,8 @@ export function createVATMaterial(
 
   return new CustomShaderMaterial({
     baseMaterial: THREE.MeshPhysicalMaterial,
-    vertexShader: VAT_VERTEX_SHADER,
-    fragmentShader: VAT_FRAGMENT_SHADER,
+    vertexShader: shaderOverrides?.vertexShader || VAT_VERTEX_SHADER,
+    fragmentShader: shaderOverrides?.fragmentShader || VAT_FRAGMENT_SHADER,
     transparent: true,
     uniforms,
     envMap: envMap,
@@ -59,7 +61,8 @@ export function createVATMaterial(
 export function createVATDepthMaterial(
   posTex: THREE.Texture,
   nrmTex: THREE.Texture | null,
-  meta: VATMeta
+  meta: VATMeta,
+  shaderOverrides?: VATShaderOverrides
 ): CustomShaderMaterial {
   const uniforms = {
     uPosTex: { value: posTex },
@@ -69,11 +72,12 @@ export function createVATDepthMaterial(
     uTexW: { value: meta.texWidth },
     uStoreDelta: { value: meta.storeDelta ? 1 : 0 },
     uNormalsCompressed: { value: meta.normalsCompressed ? 1 : 0 },
+    ...(shaderOverrides?.customUniforms || {})
   }
 
   return new CustomShaderMaterial({
     baseMaterial: THREE.MeshDepthMaterial,
-    vertexShader: VAT_VERTEX_SHADER,
+    vertexShader: shaderOverrides?.depthVertexShader || shaderOverrides?.vertexShader || VAT_VERTEX_SHADER,
     uniforms,
     depthPacking: THREE.RGBADepthPacking,
     side: THREE.DoubleSide,

@@ -26,6 +26,9 @@ export const VATInstancedMesh = forwardRef<THREE.Group, VATInstancedMeshProps>(f
   positions,
   rotations,
   scales,
+  shaders,
+  meshConfig,
+  materialConfig,
   ...rest
 }: VATInstancedMeshProps, ref) {
   const materialControls = useControls('VAT.Instanced.Material', {
@@ -78,7 +81,7 @@ export const VATInstancedMesh = forwardRef<THREE.Group, VATInstancedMeshProps>(f
 
     // Create instanced mesh
     const { instancedMesh, materials, depthInstancedMesh } = createVATInstancedMesh(
-      geometry, posTex, nrmTex, r3fScene.environment, metaData, materialControls, count, useDepthMaterial
+      geometry, posTex, nrmTex, r3fScene.environment, metaData, materialControls, count, useDepthMaterial, shaders
     )
 
     materialsRef.current = materials
@@ -126,7 +129,7 @@ export const VATInstancedMesh = forwardRef<THREE.Group, VATInstancedMeshProps>(f
         depthInstancedMeshRef.current.dispose()
       }
     }
-  }, [scene, posTex, nrmTex, metaData, useDepthMaterial, count, positions, rotations, scales, materialControls])
+  }, [scene, posTex, nrmTex, metaData, useDepthMaterial, count, positions, rotations, scales])
 
   // Update materials when controls change
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { CameraControls } from "@react-three/drei";
+import { CameraControls, useTexture } from "@react-three/drei";
 import { CanvasCapture } from "@packages/r3f-gist/components/utility";
 import { useVATPreloader } from "./vat/VATPreloader";
 import { VATMesh } from "./vat/VATMesh";
@@ -6,10 +6,11 @@ import EnvironmentSetup from "./EnvironmentSetup";
 import Lights from "./Lights";
 import { VATInstancedMesh } from "./vat/VATInstancedMesh";
 import { useMemo } from "react";
+import * as THREE from "three";
 
 export default function Scene() {
     const { scene, posTex, nrmTex, meta, isLoaded } = useVATPreloader(
-        '/vat/Rose_basisMesh.gltf',
+        '/vat/Rose.gltf',
         '/vat/Rose_pos.exr',
         '/vat/Rose_nrm.png',
         '/vat/Rose_meta.json')
@@ -44,6 +45,32 @@ export default function Scene() {
         return scales
     }, [count])
 
+    const diffTex = useTexture('/textures/Rose Petal DIff.png')
+
+    const materialConfig = useMemo(() => ({
+        roughness: 1,
+        metalness: 0,
+        clearcoat: 0,
+    }), [])
+
+    const shaders = useMemo(() => ({
+        fragmentShader: /* glsl */ `
+            uniform vec3 uColor;
+            varying vec2 vUv;
+            varying vec2 vUv2;
+            uniform sampler2D uDiffTex;
+            void main() {
+                vec2 uv = vUv;
+                uv.x *= 0.99;
+                vec4 color = texture2D(uDiffTex, uv);
+                csm_DiffuseColor = color;
+            }
+        `,
+        customUniforms: {
+            uColor: { value: new THREE.Vector3(1.0, 0.0, 0.0) },
+            uDiffTex: { value: diffTex }
+        }
+    }), [diffTex])
 
     return (
         <>
@@ -56,11 +83,6 @@ export default function Scene() {
                 <meshStandardMaterial color="white" />
             </mesh>
 
-            {/* <mesh castShadow position={[1, 1, 0.5]}>
-                <boxGeometry args={[1, 1, 1]} />
-                <meshStandardMaterial color="red" />
-            </mesh> */}
-
             <CameraControls makeDefault />
 
             <CanvasCapture />
@@ -72,6 +94,10 @@ export default function Scene() {
                     posTex={posTex}
                     nrmTex={nrmTex}
                     metaData={meta}
+                    frameRatio={0.5}
+                    scale={10}
+                    materialConfig={materialConfig}
+                    shaders={shaders}
                 />
 
 

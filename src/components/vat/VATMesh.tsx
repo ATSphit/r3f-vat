@@ -1,9 +1,9 @@
 import * as THREE from 'three'
-import { useEffect, useRef, forwardRef } from 'react'
+import { useEffect, useRef, forwardRef, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 import { useControls } from 'leva'
-import { VATMeshProps } from './types'
+import { VATMeshProps, DEFAULT_VAT_MATERIAL } from './types'
 import { cloneAndSetupVATScene, calculateVATFrame } from './utils'
 
 export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
@@ -16,9 +16,12 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
   useDepthMaterial = true,
   frameRatio,
   id,
+  shaders,
+  meshConfig,
+  materialConfig,
   ...rest
 }: VATMeshProps, ref) {
-  const materialControls = useControls('VAT.Material', {
+  const levaControls = useControls('VAT.Material', {
     roughness: { value: 0.4, min: 0, max: 1, step: 0.01 },
     metalness: { value: 0.6, min: 0, max: 1, step: 0.01 },
     transmission: { value: 0, min: 0, max: 1, step: 0.01 },
@@ -40,6 +43,12 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
     attenuationColor: '#ffffff',
   }, { collapsed: true })
 
+  // Merge default values, Leva controls, and materialConfig
+  const materialControls = useMemo(() => 
+    ({ ...DEFAULT_VAT_MATERIAL, ...levaControls, ...materialConfig }), 
+    [levaControls, materialConfig]
+  )
+
   const groupRef = useRef<THREE.Group>(null!)
   const materialsRef = useRef<CustomShaderMaterial[]>([])
   const vatSceneRef = useRef<THREE.Group | null>(null)
@@ -53,7 +62,7 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
     }
 
     const { vatScene, materials } = cloneAndSetupVATScene(
-      scene, posTex, nrmTex, r3fScene.environment, metaData, materialControls, useDepthMaterial
+      scene, posTex, nrmTex, r3fScene.environment, metaData, materialControls, useDepthMaterial, shaders, meshConfig
     )
 
     materialsRef.current = materials
@@ -68,7 +77,7 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
         groupRef.current.remove(vatSceneRef.current)
       }
     }
-  }, [scene, posTex, nrmTex, metaData, useDepthMaterial])
+  }, [scene, posTex, nrmTex, metaData, useDepthMaterial, shaders, meshConfig])
 
   // Update materials when controls change (without recreating scene)
   useEffect(() => {
@@ -111,6 +120,6 @@ export const VATMesh = forwardRef<THREE.Group, VATMeshProps>(function VATMesh({
   })
 
   return (
-    <group ref={ref || groupRef} {...rest} scale={10} />
+    <group ref={ref || groupRef} {...rest} />
   )
 })

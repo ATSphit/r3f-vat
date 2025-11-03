@@ -10,7 +10,10 @@ export type {
   VATMeta,
   VATMaterialControls,
   VATMeshProps,
+  VATShaderOverrides,
+  VATMeshConfig,
 } from './types'
+export { DEFAULT_VAT_MATERIAL } from './types'
 export type { VATInstancedMeshProps } from './VATInstancedMesh'
 
 // Utility exports
