@@ -9,10 +9,10 @@ import { useMemo } from "react";
 
 export default function Scene() {
     const { scene, posTex, nrmTex, meta, isLoaded } = useVATPreloader(
-        '/vat/Rose_fixed_basisMesh.gltf',
-        '/vat/Rose_fixed_pos.exr',
-        '/vat/Rose_fixed_nrm.png',
-        '/vat/Rose_fixed_meta.json')
+        '/vat/Rose_basisMesh.gltf',
+        '/vat/Rose_pos.exr',
+        '/vat/Rose_nrm.png',
+        '/vat/Rose_meta.json')
 
 
     const count = 2000
@@ -67,27 +67,27 @@ export default function Scene() {
 
 
             {isLoaded && (
-                // <VATMesh
-                //     scene={scene}
-                //     posTex={posTex}
-                //     nrmTex={nrmTex}
-                //     metaData={meta}
-                // />
-
-
-
-                // Use the instanced mesh
-                <VATInstancedMesh
+                <VATMesh
                     scene={scene}
                     posTex={posTex}
                     nrmTex={nrmTex}
                     metaData={meta}
-                    count={count}
-                    positions={positions}
-                    rotations={rotations}
-                    scales={scales}
-                    useDepthMaterial={true}
                 />
+
+
+
+                // Use the instanced mesh
+                // <VATInstancedMesh
+                //     scene={scene}
+                //     posTex={posTex}
+                //     nrmTex={nrmTex}
+                //     metaData={meta}
+                //     count={count}
+                //     positions={positions}
+                //     rotations={rotations}
+                //     scales={scales}
+                //     useDepthMaterial={true}
+                // />
 
             )}
         </>
