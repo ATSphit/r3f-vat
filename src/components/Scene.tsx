@@ -16,7 +16,7 @@ export default function Scene() {
         '/vat/Rose_nrm.png',
         '/vat/Rose_meta.json')
 
-    const count = 2000
+    const count = 1000
     const positions = useMemo(() => {
         const positions = new Float32Array(count * 3)
         for (let i = 0; i < count; i++) {
@@ -112,33 +112,37 @@ export default function Scene() {
 
 
             {isLoaded && scene && (
-                <VATMesh
-                    scene={scene}
-                    posTex={posTex}
-                    nrmTex={nrmTex}
-                    metaData={meta}
-                    // frameRatio={0.5}
-                    scale={10}
-                    materialConfig={materialConfig}
-                    shaders={shaders}
-                    customUniforms={customUniforms}
-                />
+                <>
+                    <VATMesh
+                        scene={scene}
+                        posTex={posTex}
+                        nrmTex={nrmTex}
+                        metaData={meta}
+                        frameRatio={0.5}
+                        scale={10}
+                        materialConfig={materialConfig}
+                        shaders={shaders}
+                        customUniforms={customUniforms}
+                    />
 
 
 
-                // Use the instanced mesh
-                // <VATInstancedMesh
-                //     scene={scene}
-                //     posTex={posTex}
-                //     nrmTex={nrmTex}
-                //     metaData={meta}
-                //     count={count}
-                //     positions={positions}
-                //     rotations={rotations}
-                //     scales={scales}
-                //     useDepthMaterial={true}
-                // />
-
+                    // Use the instanced mesh
+                    <VATInstancedMesh
+                        scene={scene}
+                        posTex={posTex}
+                        nrmTex={nrmTex}
+                        metaData={meta}
+                        count={count}
+                        positions={positions}
+                        rotations={rotations}
+                        scales={scales}
+                        useDepthMaterial={true}
+                        materialConfig={materialConfig}
+                        shaders={shaders}
+                        customUniforms={customUniforms}
+                    />
+                </>
             )}
         </>
     )
