@@ -9,7 +9,6 @@ import {
   useShaderCodeKey,
   useUpdateCustomUniforms,
   useUpdateMaterialProperties,
-  useVATFrame,
   useStableRef,
 } from './hooks'
 
@@ -18,6 +17,7 @@ export interface VATInstancedMeshProps extends Omit<VATMeshProps, 'id'> {
   positions?: Float32Array
   rotations?: Float32Array
   scales?: Float32Array
+  frameTexture?: THREE.Texture // Optional: frame texture from useFrameCompute hook
 }
 
 export const VATInstancedMesh = forwardRef<THREE.Group, VATInstancedMeshProps>(function VATInstancedMesh({
@@ -37,6 +37,7 @@ export const VATInstancedMesh = forwardRef<THREE.Group, VATInstancedMeshProps>(f
   customUniforms,
   meshConfig,
   materialConfig,
+  frameTexture,
   ...rest
 }: VATInstancedMeshProps, ref) {
   // Shared hooks
@@ -118,10 +119,25 @@ export const VATInstancedMesh = forwardRef<THREE.Group, VATInstancedMeshProps>(f
     }
   }, [scene, posTex, nrmTex, metaData, useDepthMaterial, count, positions, rotations, scales, shaderCodeKey, r3fScene.environment])
 
+  // Update frame texture uniform on materials
+  useEffect(() => {
+    if (!frameTexture) return
+    
+    for (const material of materialsRef.current) {
+      if (material.uniforms) {
+        if (!material.uniforms.uFrameTexture) {
+          material.uniforms.uFrameTexture = { value: null }
+        }
+        material.uniforms.uFrameTexture.value = frameTexture
+        material.uniforms.uInstanceCount = { value: count }
+        material.needsUpdate = true
+      }
+    }
+  }, [frameTexture, count])
+  
   // Shared update hooks
   useUpdateCustomUniforms(materialsRef, customUniforms)
   useUpdateMaterialProperties(materialsRef, materialControls)
-  useVATFrame(materialsRef, metaData, vatSpeed, frameRatio, paused)
 
   return (
     <group ref={ref || groupRef} {...rest} />

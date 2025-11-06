@@ -2,6 +2,7 @@ import { useTexture } from "@react-three/drei";
 import { VATMesh } from "./vat/VATMesh";
 import { VATInstancedMesh } from "./vat/VATInstancedMesh";
 import { useVATPreloader } from "./vat/VATPreloader";
+import { useFrameCompute } from "./vat/hooks";
 import { useControls } from "leva";
 import { useMemo } from "react";
 import * as THREE from "three";
@@ -36,7 +37,18 @@ export default function Rose() {
 
     const renderControls = useControls('VAT.Render', {
         useInstanced: { value: true, label: 'Use Instanced Mesh' },
-        instanceCount: { value: 100, min: 1, max: 10000, step: 100, label: 'Instance Count' },
+        instanceCount: { value: 20, min: 1, max: 10000, step: 100, label: 'Instance Count' },
+    }, { collapsed: true })
+
+    const stateDurationsControls = useControls('VAT.Frame States', {
+        state0Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 0: Stay at 0 - Min (s)' },
+        state0Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 0: Stay at 0 - Max (s)' },
+        state1Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Min (s)' },
+        state1Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Max (s)' },
+        state2Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Min (s)' },
+        state2Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Max (s)' },
+        state3Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 3: 1→0 - Min (s)' },
+        state3Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 3: 1→0 - Max (s)' },
     }, { collapsed: true })
 
     // Instance data for instanced mesh (ready for future use)
@@ -96,8 +108,11 @@ export default function Rose() {
             uniform float uDisplacementStrength;
             uniform float uNormalStrength;
             uniform vec2 uNoiseScale;
+            uniform sampler2D uFrameTexture; // Texture containing per-instance frame values
+            uniform float uInstanceCount; // Total number of instances
             
             attribute float instanceSeed;
+            attribute float instanceID; // Instance index (0 to instanceCount-1)
             
             varying vec2 vUv;
             varying vec3 vMask;
@@ -108,12 +123,15 @@ export default function Rose() {
             ${utility}
             
             void main() {
-                // Get the VAT position
-                // Offset frame by instance seed to create per-instance animation variation
-                // uFrame is normalized (0-1), so we add seed offset and wrap with mod
-                float frameOffset = instanceSeed; // Each instance starts at different point in animation
-                float frame = mod(uFrame + frameOffset, 1.0);
+                // Get instance index from attribute
+                float instanceIndex = instanceID;
                 
+                // Sample frame value from compute shader texture
+                // Texture is 1D: width = instanceCount, height = 1
+                vec2 frameUV = vec2((instanceIndex + 0.5) / uInstanceCount, 0.5);
+                float frame = texture2D(uFrameTexture, frameUV).r;
+                
+                // Get the VAT position
                 vec3 vatPos = VAT_pos(frame);
                 vec3 basePos = position;
                 vec3 position = (basePos + vatPos);
@@ -198,6 +216,20 @@ export default function Rose() {
         return null;
     }
 
+    // Use FBO compute shader to calculate per-instance frame values
+    const frameTexture = useFrameCompute({
+        instanceCount: renderControls.instanceCount,
+        metaData: meta,
+        vatSpeed: 1,
+        paused: false,
+        stateDurations: {
+            state0: { min: stateDurationsControls.state0Min, max: stateDurationsControls.state0Max },
+            state1: { min: stateDurationsControls.state1Min, max: stateDurationsControls.state1Max },
+            state2: { min: stateDurationsControls.state2Min, max: stateDurationsControls.state2Max },
+            state3: { min: stateDurationsControls.state3Min, max: stateDurationsControls.state3Max },
+        },
+    })
+
     return (<>
         {renderControls.useInstanced ? (
             <VATInstancedMesh
@@ -214,6 +246,7 @@ export default function Rose() {
                 materialConfig={materialConfig}
                 shaders={shaders}
                 customUniforms={customUniforms}
+                frameTexture={frameTexture}
             />
         ) : (
             <VATMesh

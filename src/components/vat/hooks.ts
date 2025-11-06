@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 import { DEFAULT_VAT_MATERIAL, VATShaderOverrides, VATMeta } from './types'
 import { calculateVATFrame } from './utils'
+export { useFrameCompute } from './hooks/useFrameCompute'
 
 /**
  * Shared Leva controls configuration
