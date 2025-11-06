@@ -1,5 +1,6 @@
 // VAT (Vertex Animation Texture) functions
 // Common module for VAT position and normal sampling
+// New format: time-based sampling using texel size
 
 // VAT uniform declarations
 uniform sampler2D uPosTex;
@@ -7,12 +8,13 @@ uniform sampler2D uNrmTex;
 uniform float uFrame;
 uniform float uFrames;
 uniform float uTexW;
-uniform int uStoreDelta;
+uniform float uTexH;
+uniform float uTexelSizeX;
 uniform int uNormalsCompressed;
 
 // VAT attribute and varying declarations
 attribute vec4 color;
-varying vec2 vUv2;
+varying vec2 vUv1;
 varying vec3 vColor;
 
 vec3 octDecode(vec2 e) {
@@ -22,36 +24,34 @@ vec3 octDecode(vec2 e) {
   return normalize(v);
 }
 
-vec3 VAT_pos_f(float f) {
-  float fx = (f + 0.5) / uTexW;
-  vec2 uv = vec2(uv2.x + fx, uv2.y);
+// Time-based sampling using texel size
+// timePosition is 0-1, representing animation progress
+vec3 VAT_pos(float timePosition) {
+  // Calculate frame index: (frameCount - 1) * timePosition
+  float frameIndex = (uFrames - 1.0) * timePosition;
+  // Calculate UV offset: frameIndex * texelSize.x
+  float frameOffset = frameIndex * uTexelSizeX;
+  // Sample at uv1 + offset
+  vec2 uv = vec2(uv1.x + frameOffset, uv1.y);
   return texture2D(uPosTex, uv).xyz;
 }
 
-vec3 VAT_pos(float f) {
-  float f0 = floor(f);
-  float f1 = min(f0 + 1.0, uFrames - 1.0);
-  vec3 p0 = VAT_pos_f(f0);
-  vec3 p1 = VAT_pos_f(f1);
-  return mix(p0, p1, fract(f));
-}
-
-vec3 VAT_nrm_f(float f) {
-  float fx = (f + 0.5) / uTexW;
-  vec2 uv = vec2(uv2.x + fx, uv2.y);
+// Time-based normal sampling
+// timePosition is 0-1, representing animation progress
+vec3 VAT_nrm(float timePosition) {
+  // Calculate frame index: (frameCount - 1) * timePosition
+  float frameIndex = (uFrames - 1.0) * timePosition;
+  // Calculate UV offset: frameIndex * texelSize.x
+  float frameOffset = frameIndex * uTexelSizeX;
+  // Sample at uv1 + offset
+  vec2 uv = vec2(uv1.x + frameOffset, uv1.y);
   vec4 texel = texture2D(uNrmTex, uv);
   if (uNormalsCompressed == 1) {
+    // Oct-encoded normals
     return octDecode(texel.xy);
   } else {
-    return normalize(texel.xyz);
+    vec3 normal = texel.xyz * 2.0 - 1.0;
+    return normalize(normal);
   }
-}
-
-vec3 VAT_nrm(float f) {
-  float f0 = floor(f);
-  float f1 = min(f0 + 1.0, uFrames - 1.0);
-  vec3 n0 = VAT_nrm_f(f0);
-  vec3 n1 = VAT_nrm_f(f1);
-  return normalize(mix(n0, n1, fract(f)));
 }
 

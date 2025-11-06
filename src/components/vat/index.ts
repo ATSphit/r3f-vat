@@ -18,7 +18,7 @@ export type { VATInstancedMeshProps } from './VATInstancedMesh'
 
 // Utility exports
 export {
-  ensureUV2ForVAT,
+  setupVATGeometry,
   calculateVATFrame,
   extractGeometryFromScene,
   createVATMesh,

@@ -17,14 +17,19 @@ export function createVATMaterial(
   shaderOverrides?: VATShaderOverrides,
   customUniforms?: Record<string, any>
 ): CustomShaderMaterial {
+  const texWidth = meta.textureWidth
+  const texHeight = meta.textureHeight
+  const texelSizeX = 1.0 / texWidth
+  
   const uniforms = {
     uPosTex: { value: posTex },
     uNrmTex: { value: nrmTex },
     uFrame: { value: 0.0 },
     uFrames: { value: meta.frameCount },
-    uTexW: { value: meta.texWidth },
-    uStoreDelta: { value: meta.storeDelta ? 1 : 0 },
-    uNormalsCompressed: { value: meta.normalsCompressed ? 1 : 0 },
+    uTexW: { value: texWidth },
+    uTexH: { value: texHeight },
+    uTexelSizeX: { value: texelSizeX },
+    uNormalsCompressed: { value: (meta.compressNormal ?? false) ? 1 : 0 },
     ...(customUniforms || {})
   }
 
@@ -116,14 +121,23 @@ export function createVATDepthMaterial(
   shaderOverrides?: VATShaderOverrides,
   customUniforms?: Record<string, any>
 ): CustomShaderMaterial {
+  const texWidth = meta.textureWidth
+  const texHeight = meta.textureHeight
+  const texelSizeX = 1.0 / texWidth
+  
+  // Default to delta mode if not specified (matches Unity shader behavior)
+  const storeDelta = meta.storeDelta ?? true
+  
   const uniforms = {
     uPosTex: { value: posTex },
     uNrmTex: { value: nrmTex },
     uFrame: { value: 0.0 },
     uFrames: { value: meta.frameCount },
-    uTexW: { value: meta.texWidth },
-    uStoreDelta: { value: meta.storeDelta ? 1 : 0 },
-    uNormalsCompressed: { value: meta.normalsCompressed ? 1 : 0 },
+    uTexW: { value: texWidth },
+    uTexH: { value: texHeight },
+    uTexelSizeX: { value: texelSizeX },
+    uStoreDelta: { value: storeDelta ? 1 : 0 },
+    uNormalsCompressed: { value: (meta.compressNormal ?? false) ? 1 : 0 },
     ...(customUniforms || {})
   }
 

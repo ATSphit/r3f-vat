@@ -5,27 +5,42 @@ import { createVATMaterial, createVATDepthMaterial } from '../materials'
 
 
 /**
- * Ensure UV2 attribute exists for VAT geometry
+ * Setup VAT geometry: generate UV1 coordinates and convert coordinate system
+ * - Generates UV1 coordinates matching Unity's VAT texture layout
+ * - Converts positions from Unity's left-handed to Three.js right-handed coordinate system
  */
-export function ensureUV2ForVAT(geometry: THREE.BufferGeometry, meta: VATMeta): void {
-  if (geometry.getAttribute('uv2')) return
-
+export function setupVATGeometry(geometry: THREE.BufferGeometry, meta: VATMeta): void {
   const count = geometry.getAttribute('position').count
-  const uv2Array = new Float32Array(count * 2)
+  const positionAttr = geometry.getAttribute('position')
+  
+  const uv1Array = new Float32Array(count * 2)
+  const positionArray = new Float32Array(count * 3)
+  const padding = meta.padding ?? 2 // Space between columns (default: 2)
+  const adjustedFramesCount = meta.frameCount + padding
+  
+  for(let i = 0; i < count; i++) {
+    // Calculate UV1 coordinates based on vertex index (matching Unity's getCoord logic)
+    const columnIndex = Math.floor(i / meta.textureHeight)
+    const verticalIndex = i % meta.textureHeight
+    
+    const uIdx = columnIndex * adjustedFramesCount
+    const vIdx = verticalIndex
+    
+    const u = (uIdx + 0.5) / meta.textureWidth
+    const v = (vIdx + 0.5) / meta.textureHeight
+    
+    uv1Array[2 * i + 0] = u
+    uv1Array[2 * i + 1] = v
 
-  for (let i = 0; i < count; i++) {
-    const colIndex = Math.floor(i / meta.texHeight)
-    const vIndex = i % meta.texHeight
-    const px = colIndex * meta.frameStride
-    const py = vIndex
-    const u = (px + 0.5) / meta.texWidth
-    const v = (py + 0.5) / meta.texHeight
-
-    uv2Array[2 * i + 0] = u
-    uv2Array[2 * i + 1] = v
+    // Convert coordinate system: Unity (left-handed) -> Three.js (right-handed)
+    // Flip X axis to convert from left-handed to right-handed
+    positionArray[3 * i + 0] = positionAttr.getX(i) * -1
+    positionArray[3 * i + 1] = positionAttr.getY(i)
+    positionArray[3 * i + 2] = positionAttr.getZ(i)
   }
-
-  geometry.setAttribute('uv2', new THREE.BufferAttribute(uv2Array, 2))
+  
+  geometry.setAttribute('uv1', new THREE.BufferAttribute(uv1Array, 2))
+  geometry.setAttribute('position', new THREE.BufferAttribute(positionArray, 3))
 }
 
 // ========== VAT Material Setup Utils ==========
@@ -115,7 +130,7 @@ export function createVATMesh(
   mesh: THREE.Mesh
   materials: CustomShaderMaterial[]
 } {
-  ensureUV2ForVAT(geometry, metaData)
+  setupVATGeometry(geometry, metaData)
 
   const { vatMaterial, vatDepthMaterial, materials } = createVATMaterials(
     { posTex, nrmTex, envMap, metaData, materialControls, shaderOverrides, customUniforms },
@@ -135,6 +150,7 @@ export function createVATMesh(
 
 /**
  * Calculate VAT frame based on animation mode
+ * Returns time position (0-1) representing animation progress
  */
 export function calculateVATFrame(
   frameRatio: number | undefined,
@@ -143,9 +159,13 @@ export function calculateVATFrame(
   speed: number
 ): number {
   if (frameRatio !== undefined) {
-    return Math.min(frameRatio * metaData.frameCount, metaData.frameCount - 5)
+    return Math.max(0, Math.min(1, frameRatio))
   }
-  return currentTime * (metaData.fps * speed) % metaData.frameCount
+  // Calculate time position from elapsed time
+  const fps = metaData.fps || 24
+  const duration = metaData.frameCount / fps
+  const timePosition = ((currentTime * speed) % duration) / duration
+  return Math.max(0, Math.min(1, timePosition))
 }
 
 /**
@@ -182,7 +202,7 @@ export function createVATInstancedMesh(
   instancedMesh: THREE.InstancedMesh
   materials: CustomShaderMaterial[]
 } {
-  ensureUV2ForVAT(geometry, metaData)
+  setupVATGeometry(geometry, metaData)
 
   const { vatMaterial, vatDepthMaterial, materials } = createVATMaterials(
     { posTex, nrmTex, envMap, metaData, materialControls, shaderOverrides, customUniforms },

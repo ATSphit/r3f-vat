@@ -9,18 +9,20 @@ void main() {
   vec3 vatPos = VAT_pos(uFrame);
   vec3 basePos = position;
 
-  vec3 position = (uStoreDelta == 1) ? (basePos + vatPos) : vatPos;
+  vec3 position =(basePos + vatPos);
 
   csm_Position = position;
   csm_Normal = VAT_nrm(uFrame);
   vUv = uv;
-  vUv2 = uv2;
+  vUv1 = uv1;
   vColor = color.rgb;
 }
 `
 
 export const VAT_FRAGMENT_SHADER = /* glsl */`
+varying vec2 vUv1;
 void main() {
+  csm_FragColor = vec4(vUv1, 0.0, 1.0);
   // Material handles all color/rendering
 }
 `

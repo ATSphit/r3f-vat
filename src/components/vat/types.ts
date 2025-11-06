@@ -1,16 +1,20 @@
 import * as THREE from 'three'
 
 // Core VAT metadata interface
+// New format with textureWidth, textureHeight, textures, padding, etc.
 export interface VATMeta {
-  vertexCount: number
   frameCount: number
-  fps: number
-  texWidth: number
-  texHeight: number
-  columns: number
-  frameStride: number
-  storeDelta: boolean
-  normalsCompressed: boolean
+  textureWidth: number
+  textureHeight: number
+  textures: {
+    position: string
+    normal: string
+  }
+  padding?: number // Space between columns (default: 2)
+  compressNormal?: boolean // Whether normals are compressed (oct-encoded)
+  glb?: string // GLB file path
+  fps?: number
+  storeDelta?: boolean
 }
 
 // Material controls interface

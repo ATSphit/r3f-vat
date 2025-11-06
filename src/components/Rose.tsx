@@ -11,11 +11,7 @@ import utility from "@packages/r3f-gist/shaders/cginc/math/utility.glsl"
 import vat from "./vat/shaders/vat.glsl"
 
 export default function Rose() {
-    const { scene, posTex, nrmTex, meta, isLoaded } = useVATPreloader(
-        '/vat/Rose.glb',
-        '/vat/Rose_pos.exr',
-        '/vat/Rose_nrm.png',
-        '/vat/Rose_meta.json')
+    const { scene, posTex, nrmTex, meta, isLoaded } = useVATPreloader('/vat/Rose_meta.json')
 
     const petalTex = useTexture('/textures/Rose Petal DIff.png')
     petalTex.colorSpace = THREE.SRGBColorSpace
@@ -111,7 +107,7 @@ export default function Rose() {
                 // Get the VAT position
                 vec3 vatPos = VAT_pos(uFrame);
                 vec3 basePos = position;
-                vec3 position = (uStoreDelta == 1) ? (basePos + vatPos) : vatPos;
+                vec3 position = (basePos + vatPos);
                 
                 // Get the VAT normal
                 vec3 normal = VAT_nrm(uFrame);
@@ -125,7 +121,7 @@ export default function Rose() {
                 csm_Position = position;
                 csm_Normal = normal;
                 vUv = uv;
-                vUv2 = uv2;
+                vUv1 = uv1;
                 vColor = color.rgb;
             }
         `,
@@ -143,7 +139,7 @@ export default function Rose() {
             uniform vec2 uNoiseScale;
             
             varying vec2 vUv;
-            varying vec2 vUv2;
+            varying vec2 vUv1;
             varying vec3 vColor;
             varying vec3 vMask;
             
