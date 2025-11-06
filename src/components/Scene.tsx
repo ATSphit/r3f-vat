@@ -9,22 +9,18 @@ export default function Scene() {
 
 
     return (
-        <>
+        <>  
             <color attach="background" args={['#000000']} />
             <Lights />
             <EnvironmentSetup />
             {/* <fogExp2 attach="fog" args={['#000000', 0.05]} /> */}
             <Effects />
 
-            <mesh rotation-x={-Math.PI / 2} receiveShadow>
-                <planeGeometry args={[10, 10]} />
-                <meshStandardMaterial color="white" />
-            </mesh>
-
             {/* <mesh castShadow receiveShadow>
                 <boxGeometry args={[1, 1, 1]} />
                 <meshStandardMaterial color="white" />
             </mesh> */}
+
 
             <CameraControls makeDefault />
 
