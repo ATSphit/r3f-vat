@@ -12,8 +12,8 @@ export default function App() {
             camera={{
                 fov: 45,
                 near: 0.1,
-                far: 200,
-                position: [0, 0, 5]
+                far: 10,
+                position: [1, 1.5, 2]
             }}
             gl={{
                 preserveDrawingBuffer: true,
@@ -22,6 +22,7 @@ export default function App() {
             dpr={[1, 2]}
             performance={{ min: 0.5, max: 1 }}
         >
+            <fogExp2 attach="fog" args={['#000000', 0.1]} />
             <AdaptiveDpr pixelated />
             <Scene />
         </Canvas>

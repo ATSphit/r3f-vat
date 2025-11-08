@@ -38,7 +38,7 @@ export default function Rose() {
 
     const renderControls = useControls('VAT.Render', {
         useInstanced: { value: true, label: 'Use Instanced Mesh' },
-        instanceCount: { value: 1000, min: 1, max: 10000, step: 100, label: 'Instance Count' },
+        instanceCount: { value: 1000, min: 1, max: 2000, step: 50, label: 'Instance Count' },
     }, { collapsed: true })
 
     const stateDurationsControls = useControls('VAT.Frame States', {
@@ -108,7 +108,7 @@ export default function Rose() {
     const scales = useMemo(() => {
         const scales = new Float32Array(renderControls.instanceCount * 3)
         for (let i = 0; i < renderControls.instanceCount; i++) {
-            const size = (Math.random() * 0.5 + 0.8) * 5
+            const size = (Math.random() * 0.8 + 1) * 4
             scales[i * 3] = size
             scales[i * 3 + 1] = size
             scales[i * 3 + 2] = size
@@ -164,6 +164,7 @@ export default function Rose() {
             varying vec3 vMask;
             varying float vInstanceSeed;
             varying vec3 vWpos;
+            varying float vProgress;
             
             ${vat}
             ${simplexNoise}
@@ -179,7 +180,11 @@ export default function Rose() {
 
 
                 vec2 planeUV = texture2D(uPlaneUVTexture, instanceUV).rg;
-                float frame = texture2D(uFrameTexture, instanceUV).r;
+                vec4 frameData = texture2D(uFrameTexture, instanceUV);
+                float frame = frameData.r;
+                float progress = frameData.a;
+
+                vProgress = progress;
 
                 // Get the VAT position
                 vec3 vatPos = VAT_pos(frame);
@@ -205,7 +210,7 @@ export default function Rose() {
                 
                 vWpos = (worldMatrix * vec4(position, 1.0)).xyz;
 
-                vec3 noise = snoiseVec3(vec3(planeUV.xy * 0.2,  uTime * 0.1)) * 0.05 * vWpos.y;
+                vec3 noise = snoiseVec3(vec3(planeUV.xy * 0.2,  uTime * 0.1)) * 0.02 * vWpos.y;
                 noise.y*= 0.2;
 
                 csm_Position = position + noise;
@@ -236,7 +241,7 @@ export default function Rose() {
             varying vec3 vMask;
             varying vec3 vWpos;
             varying float vInstanceSeed;
-            
+            varying float vProgress;
             uniform sampler2D uPetalTex;
             uniform sampler2D uOutlineTex;
 
@@ -263,7 +268,7 @@ export default function Rose() {
                 
                 vec4 petalCol =  texture2D(uPetalTex, uv);
 
-                petalCol.rgb = HSVShift(petalCol.rgb, vec3(seed * 0.02, 0.0, mod(seed * 25.0, 1.0) * -0.1));
+                petalCol.rgb = HSVShift(petalCol.rgb, vec3(seed * (0.01 + smoothstep(0.6, 1.0, vProgress) * 0.03), 0.0, mod(seed * 25.0, 1.0) * -0.1));
                 petalCol.rgb = mix(HSVShift(petalCol.rgb, vec3(0.0, 0.0, -.1)), petalCol.rgb, outline.rgb);
 
                 // Use instance seed to offset noise for per-instance variation
@@ -272,7 +277,8 @@ export default function Rose() {
                 vec3 stemfCol = mix(uGreen1, uGreen2, n);
                 vec3 finalColor = petalCol.rgb * petalMask + stemfCol * leafMask + stemfCol * stemMask;
                 
-                csm_DiffuseColor = vec4(finalColor, petalCol.a);
+                float dieOut = mix(0.2, 1.0, smoothstep(1.0, 0.6, vProgress));
+                csm_DiffuseColor = vec4(finalColor * dieOut, petalCol.a);
 
                 // csm_FragColor = vec4(vWpos.xz, 0.0, 1.0);
             }
