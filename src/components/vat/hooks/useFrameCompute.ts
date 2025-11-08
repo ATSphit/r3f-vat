@@ -20,7 +20,7 @@ interface UseFrameComputeParams {
     state3?: number | { min: number; max: number } // Frame animates from 1 to 0 (default: 1)
   }
   animated?: Float32Array | boolean // Optional: per-instance animated flags, or boolean for all instances
-  planeUVs?: Float32Array // Optional: per-instance plane UVs (2 values per instance: u, v)
+  planeUVsTexture?: THREE.DataTexture | null // Optional: per-instance plane UVs texture
 }
 
 /**
@@ -36,7 +36,7 @@ export function useFrameCompute({
   instanceSeeds,
   stateDurations = {},
   animated,
-  planeUVs,
+  planeUVsTexture,
 }: UseFrameComputeParams) {
   const { gl } = useThree()
   const intersectionUVRef = useIntersectionUV();
@@ -104,30 +104,6 @@ export function useFrameCompute({
     texture.needsUpdate = true
     return texture
   }, [instanceSeeds, instanceCount])
-
-  // Create plane UVs texture if provided
-  const planeUVsTexture = useMemo(() => {
-    if (!planeUVs || planeUVs.length === 0) {
-      return null
-    }
-    // Create RG format texture (2 channels: u, v)
-    const texture = new THREE.DataTexture(
-      planeUVs,
-      instanceCount,
-      1,
-      THREE.RGFormat,
-      THREE.FloatType
-    )
-    texture.needsUpdate = true
-    texture.minFilter = THREE.NearestFilter
-    texture.magFilter = THREE.NearestFilter
-    texture.wrapS = THREE.ClampToEdgeWrapping
-    texture.wrapT = THREE.ClampToEdgeWrapping
-
-    return texture
-  }, [planeUVs, instanceCount])
-
-
   // Helper function to get min and max values
   const getDurationConfig = (value: number | { min: number; max: number } | undefined, defaultValue: number) => {
     if (value === undefined) return { min: defaultValue, max: defaultValue }
@@ -371,9 +347,6 @@ export function useFrameCompute({
       }
       if (stateDurationsTexture) {
         stateDurationsTexture.dispose()
-      }
-      if (planeUVsTexture) {
-        planeUVsTexture.dispose()
       }
     }
   }, [computeScene, computeMesh, computeMaterial, instanceSeedsTexture, stateDurationsTexture, planeUVsTexture])

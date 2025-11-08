@@ -1,16 +1,16 @@
 import { useTexture } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { VATMesh } from "./vat/VATMesh";
 import { VATInstancedMesh } from "./vat/VATInstancedMesh";
 import { useVATPreloader } from "./vat/VATPreloader";
 import { useFrameCompute } from "./vat/hooks";
 import { useControls } from "leva";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import * as THREE from "three";
 import blending from "@packages/r3f-gist/shaders/cginc/math/blending.glsl"
 import simplexNoise from "@packages/r3f-gist/shaders/cginc/noise/simplexNoise.glsl"
 import utility from "@packages/r3f-gist/shaders/cginc/math/utility.glsl"
 import vat from "./vat/shaders/vat.glsl"
-import { useIntersectionUV } from "./IntersectionContext";
 
 export default function Rose() {
     const { scene, posTex, nrmTex, meta, isLoaded } = useVATPreloader('/vat/Rose_meta.json')
@@ -63,6 +63,29 @@ export default function Rose() {
     }, [renderControls.instanceCount])
 
 
+    const planeUVTexture = useMemo(() => {
+        const texture = new THREE.DataTexture(
+            planeUV,
+            renderControls.instanceCount,
+            1,
+            THREE.RGFormat,
+            THREE.FloatType
+        )
+        texture.needsUpdate = true
+        texture.minFilter = THREE.NearestFilter
+        texture.magFilter = THREE.NearestFilter
+        texture.wrapS = THREE.ClampToEdgeWrapping
+        texture.wrapT = THREE.ClampToEdgeWrapping
+        return texture
+    }, [planeUV, renderControls.instanceCount])
+
+    useEffect(() => {
+        return () => {
+            planeUVTexture.dispose()
+        }
+    }, [planeUVTexture])
+
+
     const positions = useMemo(() => {
         const positions = new Float32Array(renderControls.instanceCount * 3)
         for (let i = 0; i < renderControls.instanceCount; i++) {
@@ -112,7 +135,15 @@ export default function Rose() {
         uDisplacementStrength: { value: noiseControls.displacementStrength },
         uNormalStrength: { value: noiseControls.normalStrength },
         uNoiseScale: { value: new THREE.Vector2(noiseControls.noiseScale.x, noiseControls.noiseScale.y) },
-    }), [petalTex, vatUniforms.uGreen1, vatUniforms.uGreen2, outlineTex, noiseControls])
+        uPlaneUVTexture: { value: planeUVTexture },
+        uTime: { value: 0 },
+    }), [petalTex, vatUniforms.uGreen1, vatUniforms.uGreen2, outlineTex, noiseControls, planeUVTexture])
+
+    useFrame((state) => {
+        if (customUniforms?.uTime) {
+            customUniforms.uTime.value = state.clock.elapsedTime;
+        }
+    })
 
     // Memoize shader code separately - this should never change
     const shaders = useMemo(() => ({
@@ -121,14 +152,18 @@ export default function Rose() {
             uniform float uNormalStrength;
             uniform vec2 uNoiseScale;
             uniform sampler2D uFrameTexture; // Texture containing per-instance frame values
+            uniform sampler2D uPlaneUVTexture; // Texture containing per-instance plane UVs
             uniform float uInstanceCount; // Total number of instances
+            uniform float uTime;
+
             
             attribute float instanceSeed;
             attribute float instanceID; // Instance index (0 to instanceCount-1)
-            
+
             varying vec2 vUv;
             varying vec3 vMask;
             varying float vInstanceSeed;
+            varying vec3 vWpos;
             
             ${vat}
             ${simplexNoise}
@@ -140,9 +175,12 @@ export default function Rose() {
                 
                 // Sample frame value from compute shader texture
                 // Texture is 1D: width = instanceCount, height = 1
-                vec2 frameUV = vec2((instanceIndex + 0.5) / uInstanceCount, 0.5);
-                float frame = texture2D(uFrameTexture, frameUV).r;
-                
+                vec2 instanceUV = vec2((instanceIndex + 0.5) / uInstanceCount, 0.5);
+
+
+                vec2 planeUV = texture2D(uPlaneUVTexture, instanceUV).rg;
+                float frame = texture2D(uFrameTexture, instanceUV).r;
+
                 // Get the VAT position
                 vec3 vatPos = VAT_pos(frame);
                 vec3 basePos = position;
@@ -157,7 +195,21 @@ export default function Rose() {
                 vMask.y = step(abs(color.r - 0.0), epsilon); // leafMask
                 vMask.z = step(abs(color.r - 1.0), epsilon); // stemMask
 
-                csm_Position = position;
+
+                #ifdef USE_INSTANCING
+                    mat4 worldMatrix = modelMatrix * instanceMatrix;
+                #else
+                    mat4 worldMatrix = modelMatrix;
+                #endif
+
+                
+                vWpos = (worldMatrix * vec4(position, 1.0)).xyz;
+
+                vec3 noise = snoiseVec3(vec3(planeUV.xy * 0.2,  uTime * 0.1)) * 0.05 * vWpos.y;
+                noise.y*= 0.2;
+
+                csm_Position = position + noise;
+
                 csm_Normal = normal;
                 vUv = uv;
                 vUv1 = uv1;
@@ -182,6 +234,7 @@ export default function Rose() {
             varying vec2 vUv1;
             varying vec3 vColor;
             varying vec3 vMask;
+            varying vec3 vWpos;
             varying float vInstanceSeed;
             
             uniform sampler2D uPetalTex;
@@ -220,6 +273,8 @@ export default function Rose() {
                 vec3 finalColor = petalCol.rgb * petalMask + stemfCol * leafMask + stemfCol * stemMask;
                 
                 csm_DiffuseColor = vec4(finalColor, petalCol.a);
+
+                // csm_FragColor = vec4(vWpos.xz, 0.0, 1.0);
             }
         `
     }), [noiseControls])
@@ -241,7 +296,7 @@ export default function Rose() {
             state2: { min: stateDurationsControls.state2Min, max: stateDurationsControls.state2Max },
             state3: { min: stateDurationsControls.state3Min, max: stateDurationsControls.state3Max },
         },
-        planeUVs: planeUV,
+        planeUVsTexture: planeUVTexture,
     })
 
     return (<>
