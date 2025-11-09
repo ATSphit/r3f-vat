@@ -1,3 +1,16 @@
+@font-face {
+    font-family: 'Cousine';
+    src: url('/fonts/Cousine-Regular.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+    font-feature-settings: normal;
+    font-variant-ligatures: none;
+    text-rendering: optimizeSpeed;
+}
+
+
+
 html,
 body,
 #root{
@@ -7,4 +20,7 @@ body,
     width: 100%;
     height: 100%;
     overflow: hidden;
+    background-color: #171717;
+    color: white;
+    font-family: 'Cousine', sans-serif;
 }

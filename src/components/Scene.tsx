@@ -6,10 +6,9 @@ import Rose from "./Rose";
 import Effects from "./Effects";
 import InteractivePlane from "./InteractivePlane";
 import { IntersectionProvider } from "./IntersectionContext";
+import { useLoadedFileCount } from "@packages/r3f-gist/hooks";
 
 export default function Scene() {
-
-
     return (
         <IntersectionProvider>
             <color attach="background" args={['#000000']} />

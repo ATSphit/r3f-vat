@@ -3,6 +3,9 @@ import { LevaWrapper } from "@packages/r3f-gist/components";
 import { Canvas } from "@react-three/fiber";
 import Scene from "../components/Scene";
 import * as THREE from 'three';
+import { Suspense } from "react";
+import { Preload } from "@react-three/drei";
+import UI from "../components/UI";
 
 export default function App() {
     return <>
@@ -22,9 +25,14 @@ export default function App() {
             dpr={[1, 2]}
             performance={{ min: 0.5, max: 1 }}
         >
-            <fogExp2 attach="fog" args={['#000000', 0.2]} />
-            <AdaptiveDpr pixelated />
-            <Scene />
+            <Suspense fallback={null}>
+                <fogExp2 attach="fog" args={['#000000', 0.2]} />
+                <AdaptiveDpr pixelated />
+                <Scene />
+                <Preload all />
+            </Suspense>
         </Canvas>
+
+        <UI />
     </>
 }
