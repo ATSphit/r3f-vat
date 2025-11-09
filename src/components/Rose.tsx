@@ -11,6 +11,7 @@ import blending from "@packages/r3f-gist/shaders/cginc/math/blending.glsl"
 import simplexNoise from "@packages/r3f-gist/shaders/cginc/noise/simplexNoise.glsl"
 import utility from "@packages/r3f-gist/shaders/cginc/math/utility.glsl"
 import vat from "./vat/shaders/vat.glsl"
+import { generateHalton2D } from "@packages/r3f-gist/utils";
 
 export default function Rose() {
     const { scene, posTex, nrmTex, meta, isLoaded } = useVATPreloader('/vat/Rose_meta.json')
@@ -45,7 +46,7 @@ export default function Rose() {
         state0Min: { value: 0, min: 0, max: 10, step: 0.1, label: 'State 0: Stay at 0 - Min (s)' },
         state0Max: { value: 0, min: 0, max: 10, step: 0.1, label: 'State 0: Stay at 0 - Max (s)' },
         state1Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Min (s)' },
-        state1Max: { value: 4, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Max (s)' },
+        state1Max: { value: 5, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Max (s)' },
         state2Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Min (s)' },
         state2Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Max (s)' },
         state3Min: { value: 4, min: 0, max: 10, step: 0.1, label: 'State 3: 1→0 - Min (s)' },
@@ -53,14 +54,7 @@ export default function Rose() {
     }, { collapsed: true })
 
     // Instance data for instanced mesh (ready for future use)
-    const planeUV = useMemo(() => {
-        const planeUV = new Float32Array(renderControls.instanceCount * 2)
-        for (let i = 0; i < renderControls.instanceCount; i++) {
-            planeUV[i * 2] = Math.random()
-            planeUV[i * 2 + 1] = Math.random()
-        }
-        return planeUV
-    }, [renderControls.instanceCount])
+    const planeUV = useMemo(() => generateHalton2D(renderControls.instanceCount), [renderControls.instanceCount])
 
 
     const planeUVTexture = useMemo(() => {
