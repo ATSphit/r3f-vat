@@ -1,3 +1,5 @@
+#include "../../../../packages/r3f-gist/shaders/cginc/math/index.glsl"
+
 // Compute shader for calculating per-instance frame values
 // Each pixel in the output texture represents one instance's frame value
 
@@ -91,7 +93,7 @@ void main() {
                 else if(cycleTime < state1End) {
                     float stateTime = cycleTime - state0End;
                     float stateProgress = stateTime / state1Duration;
-                    frame = clamp(stateProgress, 0.0, 1.0);
+                    frame = clamp(easeOutCubic(stateProgress), 0.0, 1.0);
                 }
                 // State 2: Frame stays at 1
                 else if(cycleTime < state2End) {
@@ -101,7 +103,7 @@ void main() {
                 else {
                     float stateTime = cycleTime - state2End;
                     float stateProgress = stateTime / state3Duration;
-                    frame = clamp(1.0 - stateProgress, 0.0, 1.0);
+                    frame = clamp(easeInOutCubic(1.0 - stateProgress), 0.0, 1.0);
                 }
             }
         } else {
