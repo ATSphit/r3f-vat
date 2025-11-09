@@ -17,11 +17,12 @@ uniform vec3 uHighlightColor;
 uniform vec3 uOverlayColor;
 
 varying vec2 vUv;
+varying float vIsTopFace;
 
 void main() {
     vec4 baseColor = csm_DiffuseColor;
 
-    if (uHasIntersection > 0.5) {
+    if (uHasIntersection > 0.5 && vIsTopFace > 0.5) {
         float distanceToHit = distance(vUv, uIntersection);
         float highlight = smoothstep(uRadius + uFeather, uRadius, distanceToHit);
         baseColor.rgb = mix(baseColor.rgb, uHighlightColor, highlight);
@@ -34,9 +35,14 @@ void main() {
 
 const INTERSECTION_VERTEX_SHADER = /* glsl */`
 varying vec2 vUv;
+varying float vIsTopFace;
 
 void main() {
     vUv = uv;
+
+    vec3 worldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+    vIsTopFace = step(0.99, worldNormal.y);
+
     csm_Position = position;
     csm_Normal = normal;
 }
@@ -44,8 +50,6 @@ void main() {
 
 export default function InteractivePlane() {
     const meshRef = useRef<THREE.Mesh>(null);
-    const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-
     const { raycaster, pointer, camera } = useThree();
     const intersectionUVRef = useIntersectionUV();
     const asphaltTextures = useTexture({
@@ -79,7 +83,7 @@ export default function InteractivePlane() {
         radius: { value: 0.05, min: 0.0, max: 0.3, step: 0.005 },
         feather: { value: 0.025, min: 0.0, max: 0.3, step: 0.005 },
         highlightColor: { value: '#ff3366' },
-        displacementScale: { value: 0.1, min: 0.0, max: 0.2, step: 0.005 },
+        displacementScale: { value: 0., min: 0.0, max: 0.2, step: 0.005 },
         roughness: { value: 1, min: 0, max: 1, step: 0.01 },
         aoIntensity: { value: 1, min: 0, max: 5, step: 0.1 },
         normalScale: { value: 1, min: -2, max: 2, step: 0.05 },
@@ -113,54 +117,63 @@ export default function InteractivePlane() {
         [normalScale]
     );
 
+    const normalMatrix = useMemo(() => new THREE.Matrix3(), []);
+    const worldNormal = useMemo(() => new THREE.Vector3(), []);
+
     const handlePointerMove = () => {
         if (!meshRef.current) return;
 
-        // Update raycaster with current pointer position
         raycaster.setFromCamera(pointer, camera);
-        
-        // Perform raycast
-        const intersects = raycaster.intersectObject(meshRef.current);
-        
-        if (intersects.length > 0) {
-            const intersection = intersects[0];
 
-            // Store intersection UV
-            if (intersection.uv) {
-                if (!intersectionUVRef.current) {
-                    intersectionUVRef.current = new THREE.Vector2();
-                }
-                intersectionUVRef.current.copy(intersection.uv);
-                uniforms.uIntersection.value.copy(intersection.uv);
-                uniforms.uHasIntersection.value = 1;
+        const intersects = raycaster.intersectObject(meshRef.current, true);
+
+        const topFaceHit = intersects.find((hit) => {
+            if (!hit.face) return false;
+            normalMatrix.getNormalMatrix(hit.object.matrixWorld);
+            worldNormal.copy(hit.face.normal).applyMatrix3(normalMatrix).normalize();
+            return worldNormal.y > 0.99;
+        });
+
+        if (topFaceHit && topFaceHit.uv) {
+            if (!intersectionUVRef.current) {
+                intersectionUVRef.current = new THREE.Vector2();
             }
+            intersectionUVRef.current.copy(topFaceHit.uv);
+            uniforms.uIntersection.value.copy(topFaceHit.uv);
+            uniforms.uHasIntersection.value = 1;
         } else {
-            // No intersection, clear the UV
             intersectionUVRef.current = null;
             uniforms.uHasIntersection.value = 0;
         }
     };
 
+    const height = 0.2
+
     return (
-        <mesh 
+        <mesh
             ref={meshRef}
-            rotation-x={-Math.PI / 2} 
             receiveShadow
+            castShadow
+            position={[0, -height / 2, 0]}
             onPointerMove={handlePointerMove}
+            onPointerOut={() => {
+                intersectionUVRef.current = null;
+                uniforms.uHasIntersection.value = 0;
+            }}
         >
-            <planeGeometry
-                args={[2, 2, 128, 128]}
+            <boxGeometry
+                args={[2, height, 2, 128, 128, 128]}
                 onUpdate={(geometry) => {
-                    if (geometry.attributes.uv) {
+                    const uvAttribute = geometry.attributes.uv;
+                    if (uvAttribute) {
                         geometry.setAttribute(
                             'uv2',
-                            new THREE.BufferAttribute(geometry.attributes.uv.array, 2)
+                            new THREE.BufferAttribute(uvAttribute.array, 2)
                         );
                     }
                 }}
             />
             <CustomShaderMaterial
-                ref={materialRef}
                 baseMaterial={THREE.MeshStandardMaterial}
                 vertexShader={INTERSECTION_VERTEX_SHADER}
                 fragmentShader={INTERSECTION_FRAGMENT_SHADER}

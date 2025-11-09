@@ -271,7 +271,7 @@ export default function Rose() {
                 vec3 stemfCol = mix(uGreen1, uGreen2, n);
                 vec3 finalColor = petalCol.rgb * petalMask + stemfCol * leafMask + stemfCol * stemMask;
                 
-                float dieOut = mix(0.2, 1.0, smoothstep(1.0, 0.6, vProgress));
+                float dieOut = mix(0.1, 1.0, smoothstep(1.0, 0.6, vProgress));
                 csm_DiffuseColor = vec4(finalColor * dieOut, petalCol.a);
 
                 // csm_FragColor = vec4(vWpos.xz, 0.0, 1.0);

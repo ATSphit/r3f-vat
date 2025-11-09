@@ -26,7 +26,7 @@ export default function Scene() {
                 <meshStandardMaterial color="white" />
             </mesh> */}
 
-            <CameraControls makeDefault />
+            <CameraControls makeDefault maxDistance={5}/>
 
             <CanvasCapture />
 
