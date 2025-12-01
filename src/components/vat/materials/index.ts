@@ -108,7 +108,6 @@ export function createVATMaterial(
     uniforms,
     envMap: envMap,
     side: THREE.DoubleSide,
-    silent: true,
     ...threeJsMaterialProps,
   })
 }

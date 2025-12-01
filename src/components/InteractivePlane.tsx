@@ -185,7 +185,6 @@ export default function InteractivePlane() {
                 roughness={roughness}
                 normalScale={normalScaleVector}
                 color="white"
-                silent={true}
             />
         </mesh>
     )

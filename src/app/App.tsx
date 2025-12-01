@@ -9,7 +9,7 @@ import UI from "../components/UI";
 
 export default function App() {
     return <>
-        <LevaWrapper />
+        <LevaWrapper initialHidden={true} />
         <Canvas
             shadows
             camera={{
