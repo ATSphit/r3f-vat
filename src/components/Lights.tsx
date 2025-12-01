@@ -38,15 +38,6 @@ export default function Lights() {
     return (
         <>
             <ambientLight intensity={0.5} />
-            {/* 
-                Shadow Camera Configuration Guide:
-                1. Enable "Show Helper" in Leva controls to see the yellow wireframe box
-                2. The helper shows the shadow camera frustum - this is where shadows are rendered
-                3. Adjust Left/Right/Top/Bottom values until the yellow box covers all your objects
-                4. Objects outside the yellow box will NOT cast shadows
-                5. Increase Map Size for better shadow quality (at cost of performance)
-                6. Near/Far control the depth range - adjust if shadows cut off
-            */}
             <directionalLight 
                 ref={lightRef}
                 position={[10, 10, 10]} 

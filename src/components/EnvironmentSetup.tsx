@@ -8,7 +8,6 @@ interface EnvironmentSetupProps {
 export default function EnvironmentSetup({ quality = 256 }: EnvironmentSetupProps) {
     return (
         <>
-            {/* <Environment preset="city" environmentIntensity={0.2} /> */}
             <Environment resolution={quality} environmentIntensity={0.5} >
                 <group rotation={[-Math.PI / 2, 0, 0]}>
                     <Lightformer intensity={2} rotation-x={Math.PI / 2} position={[0, 5, -9]} scale={[10, 10, 1]} />

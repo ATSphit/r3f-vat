@@ -12,18 +12,13 @@ export default function Scene() {
     return (
         <IntersectionProvider>
             <color attach="background" args={['#171717']} />
+            
             <Lights />
             <EnvironmentSetup />
-            {/* <fogExp2 attach="fog" args={['#000000', 0.05]} /> */}
+            <fogExp2 attach="fog" args={['#000000', 0.05]} />
             <Effects />
 
             <InteractivePlane />
-
-
-            {/* <mesh castShadow receiveShadow>
-                <boxGeometry args={[1, 1, 1]} />
-                <meshStandardMaterial color="white" />
-            </mesh> */}
 
             <CameraControls makeDefault maxDistance={5}/>
 

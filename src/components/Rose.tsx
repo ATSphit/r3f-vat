@@ -40,12 +40,12 @@ export default function Rose() {
     const stateDurationsControls = useControls('VAT.Frame States', {
         state0Min: { value: 0, min: 0, max: 10, step: 0.1, label: 'State 0: Stay at 0 - Min (s)' },
         state0Max: { value: 0, min: 0, max: 10, step: 0.1, label: 'State 0: Stay at 0 - Max (s)' },
-        state1Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Min (s)' },
-        state1Max: { value: 5, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Max (s)' },
-        state2Min: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Min (s)' },
-        state2Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Max (s)' },
-        state3Min: { value: 4, min: 0, max: 10, step: 0.1, label: 'State 3: 1→0 - Min (s)' },
-        state3Max: { value: 5, min: 0, max: 10, step: 0.1, label: 'State 3: 1→0 - Max (s)' },
+        state1Min: { value: 2, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Min (s)' },
+        state1Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 1: 0→1 - Max (s)' },
+        state2Min: { value: 2, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Min (s)' },
+        state2Max: { value: 2, min: 0, max: 10, step: 0.1, label: 'State 2: Stay at 1 - Max (s)' },
+        state3Min: { value: 2, min: 0, max: 10, step: 0.1, label: 'State 3: 1→0 - Min (s)' },
+        state3Max: { value: 3, min: 0, max: 10, step: 0.1, label: 'State 3: 1→0 - Max (s)' },
     }, { collapsed: true })
 
     // Instance data for instanced mesh (ready for future use)
